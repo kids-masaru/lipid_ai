@@ -9,7 +9,7 @@ import DetailModal from "../components/DetailModal";
 function HistoryContent() {
     const searchParams = useSearchParams();
     const [history, setHistory] = useState<AnalysisResult[]>([]);
-    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [selectedItem, setSelectedItem] = useState<AnalysisResult | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -25,6 +25,18 @@ function HistoryContent() {
             if (item) setSelectedItem(item);
         }
     }, [searchParams]);
+
+    // Group by date
+    const groupedByDate = history.reduce((acc, item) => {
+        const dateKey = new Date(item.date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+        if (!acc[dateKey]) acc[dateKey] = [];
+        acc[dateKey].push(item);
+        return acc;
+    }, {} as Record<string, AnalysisResult[]>);
+
+    const dates = Object.keys(groupedByDate).sort((a, b) =>
+        new Date(groupedByDate[b][0].date).getTime() - new Date(groupedByDate[a][0].date).getTime()
+    );
 
     const handleDelete = (id: string) => {
         if (confirm("この記録を削除してもよろしいですか？")) {
@@ -54,138 +66,133 @@ function HistoryContent() {
         setSelectedIds(newSelected);
     };
 
-    const filteredHistory = history.filter(item => {
-        const query = searchQuery.toLowerCase();
-        const dateStr = new Date(item.date).toLocaleDateString('ja-JP');
-        return (
-            item.input.toLowerCase().includes(query) ||
-            dateStr.includes(query) ||
-            item.result.toLowerCase().includes(query)
-        );
-    });
+    const displayItems = selectedDate && groupedByDate[selectedDate] ? groupedByDate[selectedDate] : [];
 
     return (
         <div className="min-h-screen pb-24">
             <Navigation />
 
-            <main className="p-6 md:p-12 max-w-3xl mx-auto">
-                <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                    <h1 className="text-3xl font-bold text-gray-800">食事履歴</h1>
+            <main className="p-4 md:p-8 max-w-4xl mx-auto">
+                <h1 className="text-2xl font-bold text-gray-800 mb-4">食事履歴</h1>
 
-                    <div className="flex gap-2 w-full md:w-auto">
-                        {/* Search Bar */}
-                        <div className="relative flex-grow md:w-64">
-                            <input
-                                type="text"
-                                placeholder="日付や食材で検索..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 rounded-full bg-white border border-gray-200 focus:border-orange-300 focus:ring-2 focus:ring-orange-100 transition-all outline-none text-sm"
-                            />
-                            <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </div>
-
-                        {/* Bulk Action Button */}
-                        <button
-                            onClick={() => {
-                                setIsSelectionMode(!isSelectionMode);
-                                setSelectedIds(new Set());
-                            }}
-                            className={`px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap ${isSelectionMode
-                                    ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                                    : "bg-orange-50 text-orange-600 hover:bg-orange-100"
-                                }`}
-                        >
-                            {isSelectionMode ? "キャンセル" : "選択削除"}
-                        </button>
-                    </div>
+                <div className="flex gap-2 mb-4">
+                    <button
+                        onClick={() => {
+                            setIsSelectionMode(!isSelectionMode);
+                            setSelectedIds(new Set());
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${isSelectionMode
+                            ? "bg-gray-200 text-gray-700"
+                            : "bg-orange-50 text-orange-600"
+                            }`}
+                    >
+                        {isSelectionMode ? "キャンセル" : "選択削除"}
+                    </button>
                 </div>
 
                 {isSelectionMode && selectedIds.size > 0 && (
-                    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 animate-slide-up">
+                    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40">
                         <button
                             onClick={handleBulkDelete}
-                            className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-red-200 flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95"
+                            className="bg-red-500 text-white px-4 py-2 rounded-full font-bold text-sm shadow-lg"
                         >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
                             {selectedIds.size}件を削除
                         </button>
                     </div>
                 )}
 
-                <div className="space-y-3">
-                    {filteredHistory.length === 0 ? (
-                        <div className="text-center text-gray-400 py-12 bg-white rounded-3xl border border-dashed border-gray-200">
-                            {searchQuery ? "検索結果が見つかりません" : "まだ記録がありません"}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Date List */}
+                    <div className="bg-white rounded-2xl p-3 shadow-soft border border-gray-50 h-fit">
+                        <h2 className="text-sm font-bold text-gray-500 mb-2 px-2">日付で選択</h2>
+                        <div className="space-y-1 max-h-96 overflow-y-auto">
+                            {dates.length === 0 ? (
+                                <p className="text-gray-400 text-sm p-2">記録がありません</p>
+                            ) : (
+                                dates.map(date => (
+                                    <button
+                                        key={date}
+                                        onClick={() => setSelectedDate(date === selectedDate ? null : date)}
+                                        className={`w-full text-left px-3 py-2 rounded-xl text-sm transition-all ${date === selectedDate
+                                                ? "bg-orange-100 text-orange-700 font-bold"
+                                                : "hover:bg-gray-50 text-gray-700"
+                                            }`}
+                                    >
+                                        <div className="flex justify-between items-center">
+                                            <span>{date}</span>
+                                            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                                                {groupedByDate[date].length}件
+                                            </span>
+                                        </div>
+                                    </button>
+                                ))
+                            )}
                         </div>
-                    ) : (
-                        filteredHistory.map((item) => (
-                            <div
-                                key={item.id}
-                                onClick={() => {
-                                    if (isSelectionMode) {
-                                        toggleSelection(item.id);
-                                    } else {
-                                        setSelectedItem(item);
-                                    }
-                                }}
-                                className={`bg-white p-4 rounded-2xl shadow-sm border transition-all cursor-pointer flex items-center justify-between group ${isSelectionMode && selectedIds.has(item.id)
-                                        ? "border-orange-500 ring-2 ring-orange-100 bg-orange-50"
-                                        : "border-gray-50 hover:shadow-md hover:border-orange-100"
-                                    }`}
-                            >
-                                <div className="flex items-center gap-4">
-                                    {isSelectionMode && (
-                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${selectedIds.has(item.id)
-                                                ? "border-orange-500 bg-orange-500 text-white"
-                                                : "border-gray-300 bg-white"
-                                            }`}>
-                                            {selectedIds.has(item.id) && (
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            )}
-                                        </div>
-                                    )}
+                    </div>
 
-                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${item.mealType === "Breakfast" ? "bg-orange-50 text-orange-500" :
-                                            item.mealType === "Lunch" ? "bg-yellow-50 text-yellow-600" :
-                                                item.mealType === "Dinner" ? "bg-purple-50 text-purple-500" :
-                                                    "bg-pink-50 text-pink-500"
-                                        }`}>
-                                        {item.mealType === "Breakfast" ? "朝" :
-                                            item.mealType === "Lunch" ? "昼" :
-                                                item.mealType === "Dinner" ? "夕" : "間"}
-                                    </div>
-
-                                    <div>
-                                        <div className="text-xs text-gray-400 mb-0.5">
-                                            {new Date(item.date).toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                        </div>
-                                        <h3 className="font-bold text-gray-700 line-clamp-1">{item.input}</h3>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-3">
-                                    <span className={`px-2 py-1 rounded-lg text-xs font-bold ${item.risk === "High" ? "bg-red-50 text-red-500" :
-                                            item.risk === "Medium" ? "bg-yellow-50 text-yellow-600" :
-                                                "bg-blue-50 text-blue-500"
-                                        }`}>
-                                        {item.risk === "High" ? "高" : item.risk === "Medium" ? "中" : "低"}
-                                    </span>
-                                    {!isSelectionMode && (
-                                        <svg className="w-5 h-5 text-gray-300 group-hover:text-orange-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    )}
-                                </div>
+                    {/* Item List */}
+                    <div className="md:col-span-2 space-y-2">
+                        {!selectedDate ? (
+                            <div className="bg-white rounded-2xl p-8 text-center text-gray-400 border border-dashed border-gray-200">
+                                ← 日付を選択してください
                             </div>
-                        ))
-                    )}
+                        ) : displayItems.length === 0 ? (
+                            <div className="bg-white rounded-2xl p-8 text-center text-gray-400">
+                                記録がありません
+                            </div>
+                        ) : (
+                            displayItems.map(item => (
+                                <div
+                                    key={item.id}
+                                    onClick={() => isSelectionMode ? toggleSelection(item.id) : setSelectedItem(item)}
+                                    className={`bg-white p-3 rounded-xl shadow-sm border cursor-pointer transition-all ${isSelectionMode && selectedIds.has(item.id)
+                                            ? "border-orange-500 bg-orange-50"
+                                            : "border-gray-100 hover:border-orange-200"
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        {isSelectionMode && (
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedIds.has(item.id) ? "border-orange-500 bg-orange-500 text-white" : "border-gray-300"
+                                                }`}>
+                                                {selectedIds.has(item.id) && (
+                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${item.mealType === "Breakfast" ? "bg-orange-50 text-orange-500" :
+                                                item.mealType === "Lunch" ? "bg-yellow-50 text-yellow-600" :
+                                                    item.mealType === "Dinner" ? "bg-purple-50 text-purple-500" :
+                                                        "bg-pink-50 text-pink-500"
+                                            }`}>
+                                            {item.mealType === "Breakfast" ? "朝" :
+                                                item.mealType === "Lunch" ? "昼" :
+                                                    item.mealType === "Dinner" ? "夕" : "間"}
+                                        </div>
+
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-bold text-gray-700 text-sm truncate">{item.input}</h3>
+                                            <div className="flex gap-2 mt-1 text-xs text-gray-500">
+                                                <span>{item.calories || 0}kcal</span>
+                                                <span>P:{item.protein || 0}g</span>
+                                                <span>F:{item.fat || 0}g</span>
+                                                <span>C:{item.carbohydrates || 0}g</span>
+                                            </div>
+                                        </div>
+
+                                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${item.risk === "High" ? "bg-red-50 text-red-500" :
+                                                item.risk === "Medium" ? "bg-yellow-50 text-yellow-600" :
+                                                    "bg-blue-50 text-blue-500"
+                                            }`}>
+                                            {item.risk === "High" ? "高" : item.risk === "Medium" ? "中" : "低"}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
                 </div>
             </main>
 

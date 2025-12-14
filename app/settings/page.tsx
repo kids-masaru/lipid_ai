@@ -143,49 +143,43 @@ export default function SettingsPage() {
                         {/* Age */}
                         <div>
                             <label className="block text-sm text-gray-600 mb-2">年齢</label>
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="range"
-                                    min="15"
-                                    max="90"
-                                    value={age}
-                                    onChange={(e) => setAge(parseInt(e.target.value))}
-                                    className="flex-1 accent-orange-500"
-                                />
-                                <span className="text-lg font-bold text-gray-800 min-w-[60px] text-right">{age} 歳</span>
-                            </div>
+                            <select
+                                value={age}
+                                onChange={(e) => setAge(parseInt(e.target.value))}
+                                className="w-full bg-gray-50 text-gray-800 rounded-xl px-4 py-3 border border-gray-100 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                            >
+                                {Array.from({ length: 76 }, (_, i) => i + 15).map(a => (
+                                    <option key={a} value={a}>{a} 歳</option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* Height */}
                         <div>
                             <label className="block text-sm text-gray-600 mb-2">身長</label>
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="range"
-                                    min="140"
-                                    max="200"
-                                    value={height}
-                                    onChange={(e) => setHeight(parseInt(e.target.value))}
-                                    className="flex-1 accent-orange-500"
-                                />
-                                <span className="text-lg font-bold text-gray-800 min-w-[70px] text-right">{height} cm</span>
-                            </div>
+                            <select
+                                value={height}
+                                onChange={(e) => setHeight(parseInt(e.target.value))}
+                                className="w-full bg-gray-50 text-gray-800 rounded-xl px-4 py-3 border border-gray-100 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                            >
+                                {Array.from({ length: 61 }, (_, i) => i + 140).map(h => (
+                                    <option key={h} value={h}>{h} cm</option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* Weight */}
                         <div>
                             <label className="block text-sm text-gray-600 mb-2">体重</label>
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="range"
-                                    min="35"
-                                    max="150"
-                                    value={weight}
-                                    onChange={(e) => setWeight(parseInt(e.target.value))}
-                                    className="flex-1 accent-orange-500"
-                                />
-                                <span className="text-lg font-bold text-gray-800 min-w-[60px] text-right">{weight} kg</span>
-                            </div>
+                            <select
+                                value={weight}
+                                onChange={(e) => setWeight(parseInt(e.target.value))}
+                                className="w-full bg-gray-50 text-gray-800 rounded-xl px-4 py-3 border border-gray-100 focus:ring-2 focus:ring-orange-200 focus:outline-none"
+                            >
+                                {Array.from({ length: 116 }, (_, i) => i + 35).map(w => (
+                                    <option key={w} value={w}>{w} kg</option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* Activity Level */}
