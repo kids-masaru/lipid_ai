@@ -1,0 +1,21 @@
+{
+    "name": "Lipid-AI",
+    "short_name": "Lipid-AI",
+    "description": "脂質管理の専門家AIが、あなたの食事を分析します",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#fdfbf7",
+    "theme_color": "#f97316",
+    "icons": [
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/apple-touch-icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
