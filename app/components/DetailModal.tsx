@@ -15,7 +15,7 @@ export default function DetailModal({ item, onClose, onDelete }: DetailModalProp
             onClick={onClose}
         >
             <div
-                className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 relative animate-scale-up"
+                className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto p-6 pb-8 relative animate-scale-up mb-20"
                 onClick={e => e.stopPropagation()}
             >
                 <button
@@ -30,9 +30,9 @@ export default function DetailModal({ item, onClose, onDelete }: DetailModalProp
                 <div className="mb-6">
                     <div className="flex items-center gap-2 mb-2">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.mealType === "Breakfast" ? "bg-orange-100 text-orange-600" :
-                                item.mealType === "Lunch" ? "bg-yellow-100 text-yellow-600" :
-                                    item.mealType === "Dinner" ? "bg-purple-100 text-purple-600" :
-                                        "bg-pink-100 text-pink-600"
+                            item.mealType === "Lunch" ? "bg-yellow-100 text-yellow-600" :
+                                item.mealType === "Dinner" ? "bg-purple-100 text-purple-600" :
+                                    "bg-pink-100 text-pink-600"
                             }`}>
                             {item.mealType === "Breakfast" ? "朝食" :
                                 item.mealType === "Lunch" ? "昼食" :
@@ -45,8 +45,8 @@ export default function DetailModal({ item, onClose, onDelete }: DetailModalProp
                     <h2 className="text-2xl font-bold text-gray-800 mb-2">{item.input}</h2>
                     <div className="flex gap-2">
                         <span className={`px-3 py-1 rounded-lg text-sm font-bold ${item.risk === "High" ? "bg-red-100 text-red-500" :
-                                item.risk === "Medium" ? "bg-yellow-100 text-yellow-600" :
-                                    "bg-blue-100 text-blue-500"
+                            item.risk === "Medium" ? "bg-yellow-100 text-yellow-600" :
+                                "bg-blue-100 text-blue-500"
                             }`}>
                             総合リスク: {item.risk === "High" ? "高" : item.risk === "Medium" ? "中" : "低"}
                         </span>
@@ -56,14 +56,14 @@ export default function DetailModal({ item, onClose, onDelete }: DetailModalProp
                 {/* Impact Analysis */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
                     <div className={`p-3 rounded-xl border ${item.cholesterol_impact?.level === "High" ? "bg-red-50 border-red-100" :
-                            item.cholesterol_impact?.level === "Medium" ? "bg-yellow-50 border-yellow-100" :
-                                "bg-gray-50 border-gray-100"
+                        item.cholesterol_impact?.level === "Medium" ? "bg-yellow-50 border-yellow-100" :
+                            "bg-gray-50 border-gray-100"
                         }`}>
                         <div className="flex items-center gap-2 mb-1">
                             <span className="text-xs font-bold text-gray-500">コレステロール</span>
                             <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${item.cholesterol_impact?.level === "High" ? "bg-red-100 text-red-500" :
-                                    item.cholesterol_impact?.level === "Medium" ? "bg-yellow-100 text-yellow-600" :
-                                        "bg-blue-100 text-blue-500"
+                                item.cholesterol_impact?.level === "Medium" ? "bg-yellow-100 text-yellow-600" :
+                                    "bg-blue-100 text-blue-500"
                                 }`}>
                                 {item.cholesterol_impact?.level || "不明"}
                             </span>
@@ -74,14 +74,14 @@ export default function DetailModal({ item, onClose, onDelete }: DetailModalProp
                     </div>
 
                     <div className={`p-3 rounded-xl border ${item.neutral_fat_impact?.level === "High" ? "bg-red-50 border-red-100" :
-                            item.neutral_fat_impact?.level === "Medium" ? "bg-yellow-50 border-yellow-100" :
-                                "bg-gray-50 border-gray-100"
+                        item.neutral_fat_impact?.level === "Medium" ? "bg-yellow-50 border-yellow-100" :
+                            "bg-gray-50 border-gray-100"
                         }`}>
                         <div className="flex items-center gap-2 mb-1">
                             <span className="text-xs font-bold text-gray-500">中性脂肪</span>
                             <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${item.neutral_fat_impact?.level === "High" ? "bg-red-100 text-red-500" :
-                                    item.neutral_fat_impact?.level === "Medium" ? "bg-yellow-100 text-yellow-600" :
-                                        "bg-blue-100 text-blue-500"
+                                item.neutral_fat_impact?.level === "Medium" ? "bg-yellow-100 text-yellow-600" :
+                                    "bg-blue-100 text-blue-500"
                                 }`}>
                                 {item.neutral_fat_impact?.level || "不明"}
                             </span>

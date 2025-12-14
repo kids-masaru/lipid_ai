@@ -27,6 +27,7 @@ const PFC_RANGES = {
 export default function AnalyticsPage() {
     const [history, setHistory] = useState<AnalysisResult[]>([]);
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+    const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
 
     useEffect(() => {
         setHistory(getHistory());
@@ -41,12 +42,19 @@ export default function AnalyticsPage() {
         return d;
     });
 
-    // 日別カロリー
-    const dailyCalories = last7Days.map(day => {
+    // 日別データ
+    const dailyData = last7Days.map(day => {
         const dayRecords = history.filter(h =>
             new Date(h.date).toDateString() === day.toDateString()
         );
-        return dayRecords.reduce((sum, r) => sum + (r.calories || 0), 0);
+        return {
+            date: day,
+            records: dayRecords,
+            calories: dayRecords.reduce((sum, r) => sum + (r.calories || 0), 0),
+            protein: dayRecords.reduce((sum, r) => sum + (r.protein || 0), 0),
+            fat: dayRecords.reduce((sum, r) => sum + (r.fat || 0), 0),
+            carbs: dayRecords.reduce((sum, r) => sum + (r.carbohydrates || 0), 0)
+        };
     });
 
     // 週間合計
@@ -80,6 +88,28 @@ export default function AnalyticsPage() {
         return { status: "ok", color: "text-green-500", bg: "bg-green-50" };
     };
 
+    // 栄養アドバイス生成
+    const getNutritionAdvice = () => {
+        const advice: string[] = [];
+        if (totalCalories === 0) return [];
+
+        if (proteinRatio < PFC_RANGES.protein.min) {
+            advice.push("🥩 タンパク質が不足気味。肉・魚・大豆製品を増やしましょう");
+        }
+        if (fatRatio > PFC_RANGES.fat.max) {
+            advice.push("🧈 脂質が多め。揚げ物や脂身を控えめに");
+        } else if (fatRatio < PFC_RANGES.fat.min) {
+            advice.push("🥑 良質な脂質（魚・ナッツ）を適度に摂りましょう");
+        }
+        if (carbRatio > PFC_RANGES.carbs.max) {
+            advice.push("🍚 炭水化物が多め。ご飯の量を少し減らしてみては");
+        }
+        if (advice.length === 0) {
+            advice.push("✨ バランス良く食べられています！この調子で続けましょう");
+        }
+        return advice;
+    };
+
     // PFCチャートデータ
     const pfcData = {
         labels: ['脂質', 'タンパク質', '炭水化物'],
@@ -95,16 +125,19 @@ export default function AnalyticsPage() {
         labels: last7Days.map(d => `${d.getMonth() + 1}/${d.getDate()}`),
         datasets: [{
             label: '摂取カロリー',
-            data: dailyCalories,
-            backgroundColor: dailyCalories.map(cal =>
-                cal === 0 ? 'rgba(200, 200, 200, 0.5)' :
-                    cal > targetCalories * 1.2 ? 'rgba(239, 68, 68, 0.7)' :
-                        cal < targetCalories * 0.7 ? 'rgba(59, 130, 246, 0.7)' :
-                            'rgba(34, 197, 94, 0.7)'
+            data: dailyData.map(d => d.calories),
+            backgroundColor: dailyData.map((d, i) =>
+                selectedDayIndex === i ? 'rgba(249, 115, 22, 0.9)' :
+                    d.calories === 0 ? 'rgba(200, 200, 200, 0.5)' :
+                        d.calories > targetCalories * 1.2 ? 'rgba(239, 68, 68, 0.7)' :
+                            d.calories < targetCalories * 0.7 ? 'rgba(59, 130, 246, 0.7)' :
+                                'rgba(34, 197, 94, 0.7)'
             ),
             borderRadius: 6
         }]
     };
+
+    const selectedDay = selectedDayIndex !== null ? dailyData[selectedDayIndex] : null;
 
     return (
         <div className="min-h-screen pb-24">
@@ -166,10 +199,22 @@ export default function AnalyticsPage() {
                     )}
                 </div>
 
+                {/* 栄養アドバイス */}
+                {totalCalories > 0 && (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-2xl border border-green-100 mb-4">
+                        <h2 className="text-sm font-bold text-gray-700 mb-2">💡 栄養アドバイス</h2>
+                        <div className="space-y-1">
+                            {getNutritionAdvice().map((advice, i) => (
+                                <p key={i} className="text-sm text-gray-600">{advice}</p>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* カロリー推移 */}
                 <div className="bg-white p-4 rounded-2xl shadow-soft border border-gray-50 mb-4">
                     <div className="flex justify-between items-start mb-3">
-                        <h2 className="text-sm font-bold text-gray-700">カロリー推移</h2>
+                        <h2 className="text-sm font-bold text-gray-700">カロリー推移（タップで詳細）</h2>
                         {userProfile && (
                             <span className="text-xs text-gray-400">目標: {targetCalories}kcal/日</span>
                         )}
@@ -185,6 +230,12 @@ export default function AnalyticsPage() {
                                 scales: {
                                     y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 } } },
                                     x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                                },
+                                onClick: (_, elements) => {
+                                    if (elements.length > 0) {
+                                        const index = elements[0].index;
+                                        setSelectedDayIndex(selectedDayIndex === index ? null : index);
+                                    }
                                 }
                             }}
                         />
@@ -193,15 +244,46 @@ export default function AnalyticsPage() {
                     {/* 凡例 */}
                     <div className="flex justify-center gap-4 mt-3 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-full bg-green-500"></span>適正（目標±20%）
+                            <span className="w-2 h-2 rounded-full bg-green-500"></span>適正
                         </span>
                         <span className="flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-full bg-red-500"></span>オーバー（+20%以上）
+                            <span className="w-2 h-2 rounded-full bg-red-500"></span>多い
                         </span>
                         <span className="flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-full bg-blue-500"></span>不足（-30%以下）
+                            <span className="w-2 h-2 rounded-full bg-blue-500"></span>少ない
                         </span>
                     </div>
+
+                    {/* 選択日の詳細 */}
+                    {selectedDay && (
+                        <div className="mt-4 p-3 bg-orange-50 rounded-xl border border-orange-100">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="font-bold text-gray-700">
+                                    {selectedDay.date.getMonth() + 1}月{selectedDay.date.getDate()}日
+                                </span>
+                                <button onClick={() => setSelectedDayIndex(null)} className="text-gray-400 text-xs">✕</button>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2 text-center text-sm">
+                                <div>
+                                    <div className="text-xs text-gray-500">カロリー</div>
+                                    <div className="font-bold text-gray-700">{selectedDay.calories}</div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-gray-500">P</div>
+                                    <div className="font-bold text-pink-500">{selectedDay.protein}g</div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-gray-500">F</div>
+                                    <div className="font-bold text-orange-500">{selectedDay.fat}g</div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-gray-500">C</div>
+                                    <div className="font-bold text-blue-500">{selectedDay.carbs}g</div>
+                                </div>
+                            </div>
+                            <div className="mt-2 text-xs text-gray-500">記録数: {selectedDay.records.length}件</div>
+                        </div>
+                    )}
                 </div>
 
                 {/* 週間サマリー */}
@@ -210,13 +292,15 @@ export default function AnalyticsPage() {
 
                     <div className="grid grid-cols-2 gap-3 text-center">
                         <div className="bg-gray-50 p-3 rounded-xl">
-                            <div className="text-xs text-gray-500">総カロリー</div>
+                            <div className="text-xs text-gray-500">週間カロリー</div>
                             <div className="text-lg font-bold text-gray-800">{totalCalories.toLocaleString()}<span className="text-xs font-normal">kcal</span></div>
                         </div>
                         <div className={`p-3 rounded-xl ${caloriePercentage > 110 ? 'bg-red-50' : caloriePercentage < 80 ? 'bg-blue-50' : 'bg-green-50'}`}>
-                            <div className="text-xs text-gray-500">目標比</div>
+                            <div className="text-xs text-gray-500">
+                                目標の{caloriePercentage.toFixed(0)}%
+                            </div>
                             <div className={`text-lg font-bold ${caloriePercentage > 110 ? 'text-red-500' : caloriePercentage < 80 ? 'text-blue-500' : 'text-green-500'}`}>
-                                {caloriePercentage.toFixed(0)}%
+                                {caloriePercentage > 110 ? '少しオーバー' : caloriePercentage < 80 ? '少なめ' : '良い調子！'}
                             </div>
                         </div>
                         <div className="bg-gray-50 p-3 rounded-xl">
